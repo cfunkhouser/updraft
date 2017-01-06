@@ -1,0 +1,49 @@
+Populate a channel of file "hints" which are descriptions of files to attempt to
+back up.
+
+As hints are read, check mtime on local file vs destination. If they differ,
+back up the file.
+
+[ FileSystem ... ]
+
+
+Manager struct
+  |
+  V
+Store interface
+
+Manager:
+  Add(FileMetadata) error
+  Get(FileMetadata) (os.File, error)
+NewManager(Store)
+
+Store:
+  GetChunk(hash []byte) ([]byte, error)
+  GetRevisions(name string) ([]FileMetadata, error)
+  ListChunks() [][]byte
+  ListFileNames() []string
+  PutChunk(hash, data []byte) error
+  PutMetadata(FileMetadata) error
+
+Walk source filesystem S
+When file s found
+  - Check destination location (todo: define "location") D for file d
+  - if doesn't exist, copy it
+  - if does exist:
+    - perform fast checksum
+    - if doesn't compare:
+      - perform strong checksum - in this case, probably SHA256
+
+File:
+  []Chunk:
+    Checksum
+    Hash
+
+Store data in Blocks by hash, with Filename = hash
+
+File storage:
+
+Rev 2: [ Chunk F, Chunk G, Chunk H, Chunk D, Chunk I ]
+Rev 1: [ Chunk A, Chunk E, Chunk C, Chunk D ]
+Rev 0: [ Chunk A, Chunk B, Chunk C, Chunk D ]
+

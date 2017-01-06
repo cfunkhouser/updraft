@@ -8,29 +8,28 @@ import (
 	"github.com/rjeczalik/notify"
 )
 
-type FileSystemWatcher struct {
+type FileSystem struct {
 	start   string
 	exclude []string
-	C       <-chan *File
-	c       chan<- *File
+	C       <-chan *RevisionID
+	c       chan<- *RevisionID
 
 	notifications chan notify.EventInfo
 }
 
-func (w *FileSystemWatcher) Close() {
+func (w *FileSystem) Close() {
 	notify.Stop(w.notifications)
 	close(w.c)
 }
 
-func (w *FileSystemWatcher) sendFile(path string, info os.FileInfo) {
-	f := DefaultFile()
-	f.Name = path
-	f.Length = int(info.Size())
-	f.ModifiedTime = info.ModTime()
-	w.c <- f
+func (w *FileSystem) sendFile(path string, info os.FileInfo) {
+	w.c <- &RevisionID{
+		Name:    path,
+		ModTime: info.ModTime(),
+	}
 }
 
-func (w *FileSystemWatcher) walk(path string, info os.FileInfo, inerr error) error {
+func (w *FileSystem) walk(path string, info os.FileInfo, inerr error) error {
 	if inerr != nil {
 		log.Print(inerr)
 		return nil
@@ -52,13 +51,13 @@ func (w *FileSystemWatcher) walk(path string, info os.FileInfo, inerr error) err
 	return nil
 }
 
-func (w *FileSystemWatcher) doWalk() {
+func (w *FileSystem) doWalk() {
 	if err := filepath.Walk(w.start, w.walk); err != nil {
 		log.Print(err)
 	}
 }
 
-func (w *FileSystemWatcher) do() {
+func (w *FileSystem) do() {
 	go w.doWalk() // Walk the FS to discover files.
 	for {
 		select {
@@ -74,9 +73,9 @@ func (w *FileSystemWatcher) do() {
 	}
 }
 
-func NewFileSystemWatcher(start string, exclude []string) *FileSystemWatcher {
-	c := make(chan *File)
-	fsw := &FileSystemWatcher{
+func NewFileSystem(start string, exclude []string) *FileSystem {
+	c := make(chan *RevisionID)
+	fsw := &FileSystem{
 		start:         start,
 		exclude:       exclude,
 		C:             c,

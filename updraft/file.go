@@ -2,27 +2,18 @@ package updraft
 
 import "time"
 
-const DefaultChunkSize = 4096 // Bytes
+// RevisionID represents a version of a file stored in Updraft.
+type RevisionID struct {
+	Name string
 
-// DefaultFile creates a File with appropriate default values.
-func DefaultFile() *File {
-	return &File{
-		ChunkSize: DefaultChunkSize,
-		Chunks:    make([]*Chunk, 0),
-	}
+	// ModTime is the time at which this ModTime was written to Updraft.
+	ModTime time.Time
 }
 
-// File is the metadata representation of a file stored in Updraft.
-type File struct {
-	Name   string
-	Length int
-
-	// ChunkSize in bytes of blocks for this file.
-	ChunkSize int
-	Chunks    []*Chunk
-
-	// ModifiedTime is the time at which this File was written to Updraft.
-	ModifiedTime time.Time
+type FileMetadata struct {
+	RevisionID *RevisionID
+	Length     int
+	Chunks     []*Chunk
 }
 
 // Chunk of a file, including the offset of the chunk, a weak-but-cheap
